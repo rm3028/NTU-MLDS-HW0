@@ -30,27 +30,31 @@ if __name__ == '__main__':
     # Read datasets
     csv_separator = ' \+\+\+\$\+\+\+ '
 
-    training_label_df = pd.read_csv('data/training_label.csv', names = ['label', 'text'], sep=csv_separator, engine='python')
-    training_nolabel_df = pd.read_csv('data/training_nolabel.csv', names = ['text'], sep=csv_separator, engine='python')
+    training_label_df = pd.read_csv('data/training_label.csv', names=['label', 'text'], sep=csv_separator, engine='python')
+    training_nolabel_df = pd.read_csv('data/training_nolabel.csv', names=['text'], sep=csv_separator, engine='python')
     testing_data = pd.read_csv('data/testing_data.csv', sep=r'(?<=\d|\w),(?!\s)', engine='python')
 
     # Preprocessing
     tokenizer = AutoTokenizer.from_pretrained('bert-base-cased')
 
-    training_label_df['encoded_text'] = training_label_df['text'].apply(tokenizer.encode, add_special_tokens = False)
+    training_label_df['encoded_text'] = training_label_df['text'].apply(tokenizer.encode, add_special_tokens=False)
     one_hot_label_df= pd.get_dummies(training_label_df['label'])
-    training_nolabel_df['encoded_text'] = training_nolabel_df['text'].apply(tokenizer.encode, add_special_tokens = False)
-    testing_data['encoded_text'] = testing_data['text'].apply(tokenizer.encode, add_special_tokens = False)
+    training_nolabel_df['encoded_text'] = training_nolabel_df['text'].apply(tokenizer.encode, add_special_tokens=False)
+    testing_data['encoded_text'] = testing_data['text'].apply(tokenizer.encode, add_special_tokens=False)
 
     max_seq_len = max([len(seq) for seq in training_label_df['encoded_text']])
 
     lstm_net = LSTM_Net(max_seq_len, 128, one_hot_label_df.shape[1])
 
-    training_label_ts = torch.tensor(training_label_df['encoded_text'].values)
+    training_label_tss = []
+    for encoded_text in training_label_df['encoded_text']:
+        training_label_tss.append(torch.tensor(encoded_text))
+    training_label_ts = torch.nn.utils.rnn.pad_sequence(training_label_tss, batch_first=True)
+    one_hot_label_ts = torch.tensor(one_hot_label_df.values)
 
     epoch_num = 100
     for epoch in range(epoch_num):
-
+        pass
 
     testing_data.head()
 
