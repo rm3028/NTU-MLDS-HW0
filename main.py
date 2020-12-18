@@ -3,59 +3,38 @@
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 
-import pandas as pd
-import numpy as np
-from transformers import AutoTokenizer
-from sklearn.preprocessing import OneHotEncoder
 import torch
+from torch.utils.data import DataLoader
 
-class LSTM_Net(torch.nn.Module):
-    def __init__(self, input_size, hidden_size, output_size):
-        super(LSTM_Net, self).__init__()
-        self.embeddingLayer = torch.nn.Embedding(input_size, hidden_size)
-        self.lstmLayer = torch.nn.LSTM(hidden_size, hidden_size)
-        self.fcLayer = torch.nn.Linear(hidden_size, output_size)
-        self.softmax = torch.nn.Softmax(dim = -1)
+from NetworkLSTM import *
+from DatasetHW0 import *
 
-    def forward(self, input, hidden):
-        x = self.embeddingLayer(input)
-        x, hidden = self.lstmLayer(x, hidden)
-        x = self.fcLayer(x)
-        output = self.softmax(x)
-        return output, x
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
 
-    # Read datasets
-    csv_separator = ' \+\+\+\$\+\+\+ '
+    # Read Dataset
+    hw0Dataset = HW0Dataset('data', DatasetType.TrainingLabel)
+    dataloader = DataLoader(hw0Dataset, batch_size=5, shuffle=True, num_workers=4)
 
-    training_label_df = pd.read_csv('data/training_label.csv', names=['label', 'text'], sep=csv_separator, engine='python')
-    training_nolabel_df = pd.read_csv('data/training_nolabel.csv', names=['text'], sep=csv_separator, engine='python')
-    testing_data = pd.read_csv('data/testing_data.csv', sep=r'(?<=\d|\w),(?!\s)', engine='python')
+    # Initialize training
+    lstm_net = LSTM_Net(hw0Dataset.max_seq_len, 128, hw0Dataset.training_label_ts.shape[1])
+    optimizer = torch.optim.Adam(lstm_net.parameters(), lr=0.001)
+    criterion = torch.nn.CrossEntropyLoss
 
-    # Preprocessing
-    tokenizer = AutoTokenizer.from_pretrained('bert-base-cased')
-
-    training_label_df['encoded_text'] = training_label_df['text'].apply(tokenizer.encode, add_special_tokens=False)
-    one_hot_label_df= pd.get_dummies(training_label_df['label'])
-    training_nolabel_df['encoded_text'] = training_nolabel_df['text'].apply(tokenizer.encode, add_special_tokens=False)
-    testing_data['encoded_text'] = testing_data['text'].apply(tokenizer.encode, add_special_tokens=False)
-
-    max_seq_len = max([len(seq) for seq in training_label_df['encoded_text']])
-
-    lstm_net = LSTM_Net(max_seq_len, 128, one_hot_label_df.shape[1])
-
-    training_label_tss = []
-    for encoded_text in training_label_df['encoded_text']:
-        training_label_tss.append(torch.tensor(encoded_text))
-    training_label_ts = torch.nn.utils.rnn.pad_sequence(training_label_tss, batch_first=True)
-    one_hot_label_ts = torch.tensor(one_hot_label_df.values)
-
+    # Start training
     epoch_num = 100
     for epoch in range(epoch_num):
-        pass
+        for batch_idx, (text, label) in enumerate(dataloader):
+            optimizer.zero_grad()
+            output = lstm_net(text)
+            loss = criterion(output, label)
+            loss.backward()
+            optimizer.step()
 
-    testing_data.head()
+            if batch_idx % 100 == 0:
+                print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+                    epoch, batch_idx * len(text), len(dataloader.dataset),
+                           100. * batch_idx / len(dataloader), loss.item()))
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
