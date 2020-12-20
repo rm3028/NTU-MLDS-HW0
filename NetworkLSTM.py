@@ -11,8 +11,8 @@ class LSTM_Net(torch.nn.Module):
         self.softmax = Softmax(dim = -1)
 
     def forward(self, input):
-        x = self.embeddingLayer(input)
-        x = self.lstmLayer(x, None)
-        x = self.fcLayer(x)
+        x = self.embeddingLayer(input.t())
+        x, (h, c) = self.lstmLayer(x)
+        x = self.fcLayer(h.view(len(input), -1))
         output = self.softmax(x)
         return output

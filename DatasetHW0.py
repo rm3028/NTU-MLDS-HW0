@@ -28,16 +28,16 @@ class HW0Dataset(Dataset):
         self.training_nolabel_df['encoded_text'] = self.training_nolabel_df['text'].apply(self.tokenizer.encode, add_special_tokens=True)
         self.testing_data_df['encoded_text'] = self.testing_data_df['text'].apply(self.tokenizer.encode, add_special_tokens=True)
 
-        self.training_label_ts = torch.tensor(pd.get_dummies(self.training_label_df['label']).values)
+        self.training_label_ts = torch.tensor(self.training_label_df['label'].values)
 
         dataset_tss = []
 
         for encoded_text in self.training_label_df['encoded_text']:
-            dataset_tss.append(torch.tensor(encoded_text))
+            dataset_tss.append(torch.LongTensor(encoded_text))
         for encoded_text in self.training_nolabel_df['encoded_text']:
-            dataset_tss.append(torch.tensor(encoded_text))
+            dataset_tss.append(torch.LongTensor(encoded_text))
         for encoded_text in self.testing_data_df['encoded_text']:
-            dataset_tss.append(torch.tensor(encoded_text))
+            dataset_tss.append(torch.LongTensor(encoded_text))
 
         dataset_ts = torch.nn.utils.rnn.pad_sequence(dataset_tss, batch_first=True)
 
@@ -45,13 +45,7 @@ class HW0Dataset(Dataset):
         self.training_nolabel_ts = dataset_ts[len(self.training_label_df):len(self.training_label_df)+len(self.training_nolabel_df)]
         self.testing_data_ts = dataset_ts[len(self.training_label_df)+len(self.training_nolabel_df):]
 
-        if torch.cuda.is_available():
-            self.training_data_ts.cuda()
-            self.training_label_ts.cuda()
-            self.training_nolabel_ts.cuda()
-            self.testing_data_ts.cuda()
-
-        self.max_seq_len = dataset_ts.shape[1]
+        self.max_seq_len = torch.max(dataset_ts).tolist() + 1
 
     def __len__(self):
         if self.datasetType == DatasetType.TrainingLabel:

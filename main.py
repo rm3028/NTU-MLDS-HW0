@@ -19,13 +19,19 @@ if __name__ == '__main__':
 
     # Initialize training
     lstm_net = LSTM_Net(hw0Dataset.max_seq_len, 128, hw0Dataset.training_label_ts.shape[1])
+    if torch.cuda.is_available():
+        lstm_net.cuda()
+
     optimizer = torch.optim.Adam(lstm_net.parameters(), lr=0.001)
-    criterion = torch.nn.CrossEntropyLoss
+    criterion = torch.nn.CrossEntropyLoss()
 
     # Start training
     epoch_num = 100
     for epoch in range(epoch_num):
-        for batch_idx, (text, label) in enumerate(dataloader):
+        for batch_idx, batch in enumerate(dataloader):
+            text = batch['text'].cuda() if torch.cuda.is_available() else batch['text']
+            label = batch['label'].cuda() if torch.cuda.is_available() else batch['label']
+
             optimizer.zero_grad()
             output = lstm_net(text)
             loss = criterion(output, label)
