@@ -29,6 +29,7 @@ class HW0Dataset(Dataset):
         self.testing_data_df['encoded_text'] = self.testing_data_df['text'].apply(self.tokenizer.encode, add_special_tokens=True)
 
         self.training_label_ts = torch.tensor(self.training_label_df['label'].values)
+        self.testing_id_ts = torch.tensor(self.testing_data_df['id'].values)
 
         dataset_tss = []
 
@@ -45,7 +46,8 @@ class HW0Dataset(Dataset):
         self.training_nolabel_ts = dataset_ts[len(self.training_label_df):len(self.training_label_df)+len(self.training_nolabel_df)]
         self.testing_data_ts = dataset_ts[len(self.training_label_df)+len(self.training_nolabel_df):]
 
-        self.max_seq_len = torch.max(dataset_ts).tolist() + 1
+        self.vocab_size = torch.max(dataset_ts).item() + 1
+        self.label_num = torch.max(self.training_label_ts).item() + 1
 
     def __len__(self):
         if self.datasetType == DatasetType.TrainingLabel:
@@ -62,11 +64,11 @@ class HW0Dataset(Dataset):
             idx = idx.tolist()
 
         if self.datasetType == DatasetType.TrainingLabel:
-            return { 'text': self.training_data_ts[idx], 'label': self.training_label_ts[idx] }
+            return {'text': self.training_data_ts[idx], 'label': self.training_label_ts[idx]}
         elif self.datasetType == DatasetType.TrainingUnLabel:
             return {'text': self.training_nolabel_ts[idx]}
         elif self.datasetType == DatasetType.TestingData:
-            return {'text': self.testing_data_ts[idx]}
+            return {'text': self.testing_data_ts[idx], 'id': self.testing_id_ts[idx]}
         else:
             return None
 
