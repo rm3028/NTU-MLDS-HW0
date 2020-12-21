@@ -5,6 +5,7 @@
 
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
+from torchsummary import summary
 
 from NetworkLSTM import *
 from DatasetHW0 import *
@@ -45,6 +46,7 @@ if __name__ == '__main__':
     lstm_net = LSTM_Net(hw0Dataset.vocab_size, hw0Dataset.label_num)
     if torch.cuda.is_available():
         lstm_net.cuda()
+    summary(lstm_net, hw0Dataset.testing_data_ts.shape)
 
     optimizer = torch.optim.Adam(lstm_net.parameters(), lr=learning_rate)
     criterion = torch.nn.CrossEntropyLoss()
