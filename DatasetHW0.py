@@ -12,7 +12,7 @@ class DatasetType(Enum):
 
 
 class HW0Dataset(Dataset):
-    def __init__(self, dataset_dir, datasetType = DatasetType.TrainingLabel):
+    def __init__(self, dataset_dir, max_seq_length=-1, datasetType=DatasetType.TrainingLabel):
         csv_separator = ' \+\+\+\$\+\+\+ '
 
         self.dataset_dir = dataset_dir
@@ -31,22 +31,27 @@ class HW0Dataset(Dataset):
         self.training_label_ts = torch.tensor(self.training_label_df['label'].values)
         self.testing_id_ts = torch.tensor(self.testing_data_df['id'].values)
 
-        dataset_tss = []
+        self.max_seq_length = max_seq_length
 
+        training_label_tss = []
         for encoded_text in self.training_label_df['encoded_text']:
-            dataset_tss.append(torch.LongTensor(encoded_text))
+            training_label_tss.append(torch.LongTensor(
+                encoded_text if self.max_seq_length < 0 or len(encoded_text) <= self.max_seq_length else encoded_text[0:self.max_seq_length]))
+        self.training_data_ts = torch.nn.utils.rnn.pad_sequence(training_label_tss, batch_first=True)
+
+        training_nolabel_tss = []
         for encoded_text in self.training_nolabel_df['encoded_text']:
-            dataset_tss.append(torch.LongTensor(encoded_text))
+            training_nolabel_tss.append(torch.LongTensor(
+                encoded_text if self.max_seq_length < 0 or len(encoded_text) <= self.max_seq_length else encoded_text[0:self.max_seq_length]))
+        self.training_nolabel_ts = torch.nn.utils.rnn.pad_sequence(training_nolabel_tss, batch_first=True)
+
+        testing_data_tss = []
         for encoded_text in self.testing_data_df['encoded_text']:
-            dataset_tss.append(torch.LongTensor(encoded_text))
+            testing_data_tss.append(torch.LongTensor(
+                encoded_text if self.max_seq_length < 0 or len(encoded_text) <= self.max_seq_length else encoded_text[0:self.max_seq_length]))
+        self.testing_data_ts = torch.nn.utils.rnn.pad_sequence(testing_data_tss, batch_first=True)
 
-        dataset_ts = torch.nn.utils.rnn.pad_sequence(dataset_tss, batch_first=True)
-
-        self.training_data_ts = dataset_ts[0:len(self.training_label_df)]
-        self.training_nolabel_ts = dataset_ts[len(self.training_label_df):len(self.training_label_df)+len(self.training_nolabel_df)]
-        self.testing_data_ts = dataset_ts[len(self.training_label_df)+len(self.training_nolabel_df):]
-
-        self.vocab_size = torch.max(dataset_ts).item() + 1
+        self.vocab_size = max(torch.max(self.training_data_ts).item(), torch.max(self.training_nolabel_ts).item(), torch.max(self.testing_data_ts).item()) + 1
         self.label_num = torch.max(self.training_label_ts).item() + 1
 
     def __len__(self):
