@@ -34,7 +34,7 @@ if __name__ == '__main__':
     writer = SummaryWriter(logPath)
 
     # Read Dataset
-    hw0Dataset = HW0Dataset('data100', max_seq_length=24, datasetType=DatasetType.TrainingLabel)
+    hw0Dataset = HW0Dataset('data', max_seq_length=24, datasetType=DatasetType.TrainingLabel)
     dataloader = DataLoader(hw0Dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 
     # Initialize training
