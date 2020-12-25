@@ -114,7 +114,5 @@ if __name__ == '__main__':
             for i in range(len(predicted)):
                 writer.writerow([batch['id'][i].item(), predicted[i].item()])
 
-    writer.close()
-
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
