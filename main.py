@@ -1,7 +1,3 @@
-# This is a sample Python script.
-
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
@@ -26,7 +22,7 @@ def SaveModel(network, output_folder):
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     # Initalize
-    epoch_num = 100
+    epoch_num = 10
     batch_size = 100
     learning_rate = 0.001
 
@@ -38,7 +34,7 @@ if __name__ == '__main__':
     writer = SummaryWriter(logPath)
 
     # Read Dataset
-    hw0Dataset = HW0Dataset('data', max_seq_length=24, datasetType=DatasetType.TrainingLabel)
+    hw0Dataset = HW0Dataset('data100', max_seq_length=24, datasetType=DatasetType.TrainingLabel)
     dataloader = DataLoader(hw0Dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 
     # Initialize training
@@ -86,9 +82,9 @@ if __name__ == '__main__':
 
             for i in range(hw0Dataset.label_num):
                 accuracy = class_correct[i] / class_total[i]
-                print('Accuracy of %5s : %2d %%' % (
+                print('Accuracy of %s : %2d %%' % (
                     i, 100 * accuracy))
-                writer.add_scalar(logPath + '/C' + str(i) + '_Accuracy', loss.item(), epoch)
+                writer.add_scalar(logPath + '/C' + str(i) + '_Accuracy', accuracy, epoch)
 
             writer.add_scalar(logPath + '/Accuracy', sum(class_correct) / sum(class_total), epoch)
 
@@ -102,17 +98,16 @@ if __name__ == '__main__':
     timeStr = now.strftime("%y%m%d_%H%M%S")
 
     with open(output_folder + '/Testing_' + timeStr + '.csv', 'w', newline='') as outputFile:
+        writer = csv.writer(outputFile)
+        writer.writerow(['id', 'label'])
+
         for batch_idx, batch in enumerate(dataloader):
             text = batch['text'].cuda() if torch.cuda.is_available() else batch['text']
 
             output = lstm_net(text)
             _, predicted = torch.max(output, 1)
 
-            writer = csv.writer(outputFile)
-            writer.writerow(['id', 'label'])
-
             for i in range(len(predicted)):
                 writer.writerow([batch['id'][i].item(), predicted[i].item()])
 
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    print('Finish!')
