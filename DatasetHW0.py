@@ -1,9 +1,10 @@
 
-from enum import Enum, auto
+import pandas as pd
 import torch
 from torch.utils.data import Dataset
-import pandas as pd
 from transformers import AutoTokenizer
+from enum import Enum, auto
+
 
 class DatasetType(Enum):
     TrainingLabel = auto()
@@ -18,35 +19,35 @@ class HW0Dataset(Dataset):
         self.dataset_dir = dataset_dir
         self.datasetType = datasetType
 
-        self.tokenizer = AutoTokenizer.from_pretrained('bert-base-cased')
+        tokenizer = AutoTokenizer.from_pretrained('bert-base-cased')
 
-        self.training_label_df = pd.read_csv(dataset_dir + '/training_label.csv', names=['label', 'text'], sep=csv_separator, engine='python')
-        self.training_nolabel_df = pd.read_csv(dataset_dir + '/training_nolabel.csv', names=['text'], sep=csv_separator, engine='python')
-        self.testing_data_df = pd.read_csv(dataset_dir + '/testing_data.csv', sep=r'(?<=\d|\w),(?!\s)', engine='python')
+        training_label_df = pd.read_csv(dataset_dir + '/training_label.csv', names=['label', 'text'], sep=csv_separator, engine='python')
+        training_nolabel_df = pd.read_csv(dataset_dir + '/training_nolabel.csv', names=['text'], sep=csv_separator, engine='python')
+        testing_data_df = pd.read_csv(dataset_dir + '/testing_data.csv', sep=r'(?<=\d|\w),(?!\s)', engine='python')
 
-        self.training_label_df['encoded_text'] = self.training_label_df['text'].apply(self.tokenizer.encode, add_special_tokens=True)
-        self.training_nolabel_df['encoded_text'] = self.training_nolabel_df['text'].apply(self.tokenizer.encode, add_special_tokens=True)
-        self.testing_data_df['encoded_text'] = self.testing_data_df['text'].apply(self.tokenizer.encode, add_special_tokens=True)
+        training_label_df['encoded_text'] = training_label_df['text'].apply(tokenizer.encode, add_special_tokens=True)
+        training_nolabel_df['encoded_text'] = training_nolabel_df['text'].apply(tokenizer.encode, add_special_tokens=True)
+        testing_data_df['encoded_text'] = testing_data_df['text'].apply(tokenizer.encode, add_special_tokens=True)
 
-        self.training_label_ts = torch.tensor(self.training_label_df['label'].values)
-        self.testing_id_ts = torch.tensor(self.testing_data_df['id'].values)
+        self.training_label_ts = torch.tensor(training_label_df['label'].values)
+        self.testing_id_ts = torch.tensor(testing_data_df['id'].values)
 
         self.max_seq_length = max_seq_length
 
         training_label_tss = []
-        for encoded_text in self.training_label_df['encoded_text']:
+        for encoded_text in training_label_df['encoded_text']:
             training_label_tss.append(torch.LongTensor(
                 encoded_text if self.max_seq_length < 0 or len(encoded_text) <= self.max_seq_length else encoded_text[0:self.max_seq_length]))
         self.training_data_ts = torch.nn.utils.rnn.pad_sequence(training_label_tss, batch_first=True)
 
         training_nolabel_tss = []
-        for encoded_text in self.training_nolabel_df['encoded_text']:
+        for encoded_text in training_nolabel_df['encoded_text']:
             training_nolabel_tss.append(torch.LongTensor(
                 encoded_text if self.max_seq_length < 0 or len(encoded_text) <= self.max_seq_length else encoded_text[0:self.max_seq_length]))
         self.training_nolabel_ts = torch.nn.utils.rnn.pad_sequence(training_nolabel_tss, batch_first=True)
 
         testing_data_tss = []
-        for encoded_text in self.testing_data_df['encoded_text']:
+        for encoded_text in testing_data_df['encoded_text']:
             testing_data_tss.append(torch.LongTensor(
                 encoded_text if self.max_seq_length < 0 or len(encoded_text) <= self.max_seq_length else encoded_text[0:self.max_seq_length]))
         self.testing_data_ts = torch.nn.utils.rnn.pad_sequence(testing_data_tss, batch_first=True)
