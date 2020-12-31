@@ -8,7 +8,7 @@
   * transformers: 4.0.1
   * tensorboard: 2.3.0
   * pandas: 1.1.5
-* Authors: Wei-Yun
-* Date: December 30, 2020
+* Author: Wei-Yun
+* Date: December 31, 2020
 * Copyright © 2020 Wei-Yun
 * All rights reserved
