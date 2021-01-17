@@ -9,6 +9,6 @@
   * tensorboard: 2.3.0
   * pandas: 1.1.5
 * Author: Wei-Yun
-* Date: December 31, 2020
-* Copyright © 2020 Wei-Yun
-* All rights reserved
+* Email: rm3028@hotmail.com.tw
+* Copyright © 2020 Wei-Yun.
+* All rights reserved.
